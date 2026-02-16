@@ -317,7 +317,7 @@ docker run -p 8000:8000 --env-file .env resume-parser-api
 
 - [x] Project scaffolding and README
 - [x] API key authentication (abstract provider + env default)
-- [ ] Rate limiting per key (SlowAPI)
+- [x] Rate limiting per key (SlowAPI)
 - [ ] Algorithmic text extraction (PDF, DOCX)
 - [ ] Text quality scoring heuristic
 - [ ] Pydantic v2 output schema and LLM response validation

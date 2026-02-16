@@ -9,17 +9,26 @@ from src.auth.factory import reset_auth_provider
 from src.main import app
 
 TEST_API_KEY = "sk-parse-test-key"
+TEST_API_KEY_2 = "sk-parse-test-key-2"
 INVALID_API_KEY = "sk-parse-invalid"
+
+# Identity strings for rate-limit tests (per-key limits).
+STUB_IDENTITY = "test-identity"
+STUB_IDENTITY_2 = "test-identity-2"
 
 
 class StubAuthProvider(BaseAuthProvider):
-    """Auth provider for tests — accepts only TEST_API_KEY."""
+    """Auth provider for tests — accepts TEST_API_KEY and TEST_API_KEY_2."""
 
     async def validate_key(self, api_key: str) -> bool:
-        return api_key == TEST_API_KEY
+        return api_key in (TEST_API_KEY, TEST_API_KEY_2)
 
     async def get_key_identity(self, api_key: str) -> str:
-        return "test-identity"
+        if api_key == TEST_API_KEY:
+            return STUB_IDENTITY
+        if api_key == TEST_API_KEY_2:
+            return STUB_IDENTITY_2
+        return "unknown"
 
 
 @pytest.fixture(autouse=True)
@@ -35,6 +44,18 @@ def _override_auth(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, Non
     reset_auth_provider()
 
 
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter() -> Generator[None, None, None]:
+    """Reset rate limiter storage before each test for isolation."""
+    yield
+    limiter_instance = getattr(app.state, "limiter", None)
+    if limiter_instance is not None and hasattr(limiter_instance, "reset"):
+        try:
+            limiter_instance.reset()
+        except (NotImplementedError, Exception):
+            pass
+
+
 @pytest.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app)
@@ -45,6 +66,12 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
 @pytest.fixture
 def auth_headers() -> dict[str, str]:
     return {"X-API-Key": TEST_API_KEY}
+
+
+@pytest.fixture
+def auth_headers_key2() -> dict[str, str]:
+    """Headers for second test API key (rate-limit tests)."""
+    return {"X-API-Key": TEST_API_KEY_2}
 
 
 @pytest.fixture

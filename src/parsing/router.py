@@ -1,12 +1,14 @@
 import time
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
 from pydantic import ValidationError
 
 from src.auth.dependencies import require_api_key
+from src.config import settings
 from src.logging import get_logger
 from src.parsing.dependencies import validate_upload
 from src.parsing.schemas import ParseMetadata, ParseOptions, ParseResponse
+from src.rate_limit import limiter
 
 logger = get_logger(__name__)
 
@@ -30,7 +32,10 @@ OPTIONS_FORM_PARAM = Form(
         429: {"description": "Rate limit exceeded"},
     },
 )
+@limiter.limit(lambda: settings.RATE_LIMIT)
 async def parse_resume(
+    request: Request,
+    response: Response,
     file: UploadFile = UPLOAD_FILE_PARAM,
     options: str | None = OPTIONS_FORM_PARAM,
     key_identity: str = Depends(require_api_key),
