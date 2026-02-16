@@ -56,28 +56,15 @@ The philosophy: **don't spend money when you don't have to.** A clean PDF with s
 ### Prerequisites
 
 - Python 3.12+
+- [uv](https://docs.astral.sh/uv/) (Python package manager)
 - An API key from [OpenRouter](https://openrouter.ai/) or another supported LLM provider
 
 ### Installation
 
-**Linux / macOS**
-
 ```bash
 git clone https://github.com/yourorg/resume-parser-api.git
 cd resume-parser-api
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-**Windows (PowerShell)**
-
-```powershell
-git clone https://github.com/yourorg/resume-parser-api.git
-cd resume-parser-api
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+uv sync
 ```
 
 
@@ -116,17 +103,15 @@ All default models can be overridden per request via the API payload.
 
 ### Run
 
-From the project root (with the virtual environment activated):
+From the project root:
 
 ```bash
-uvicorn src.main:app --reload
+uv run uvicorn src.main:app --reload
 ```
-
-**Windows:** Same command. Ensure you've activated the venv (e.g. `.\.venv\Scripts\Activate.ps1` in PowerShell).
 
 Docs at `http://localhost:8000/docs`.
 
-To verify the setup, run the test suite from the project root: `pytest tests/ -v` (or `python -m pytest tests/ -v` on Windows).
+To verify the setup, run the test suite from the project root: `uv run pytest tests/ -v`.
 
 ## Usage
 
@@ -219,7 +204,7 @@ tests/
     └── (added when OpenRouter integration is built)
 ```
 
-Run all tests: `pytest tests/ -v`. Run only integration: `pytest tests/integration/ -v`. Exclude e2e: `pytest tests/ -v -m "not e2e"`.
+Run all tests: `uv run pytest tests/ -v`. Run only integration: `uv run pytest tests/integration/ -v`. Exclude e2e: `uv run pytest tests/ -v -m "not e2e"`.
 
 ## API Protection
 
@@ -259,37 +244,25 @@ The response also includes `pages` (number of document pages) and `ocr_used` (wh
 
 ## Development
 
-Install dev dependencies: `pip install -r requirements-dev.txt`
+Install dev dependencies: `uv sync --all-extras`
 
 **Tests**
 
 | Command | What runs |
 | --- | --- |
-| `pytest tests/ -v` | All tests (unit + integration + e2e) |
-| `pytest tests/integration/ -v` | Integration only (FastAPI app, mocked deps) |
-| `pytest tests/unit/ -v` | Unit only (pure logic, no app) |
-| `pytest tests/ -v -m "not e2e"` | Skip e2e (no real external services) |
+| `uv run pytest tests/ -v` | All tests (unit + integration + e2e) |
+| `uv run pytest tests/integration/ -v` | Integration only (FastAPI app, mocked deps) |
+| `uv run pytest tests/unit/ -v` | Unit only (pure logic, no app) |
+| `uv run pytest tests/ -v -m "not e2e"` | Skip e2e (no real external services) |
 
 Root `tests/conftest.py` provides shared fixtures (AsyncClient, auth stub, sample PDF). Integration tests use the full app with DI overrides; e2e tests hit real APIs and are marked with `@pytest.mark.e2e`.
 
-**Linux / macOS**
-
 ```bash
-pytest tests/ -v              # Tests
-pytest --cov=src tests/       # Coverage
-ruff check --fix src/         # Lint
-ruff format src/              # Format
-mypy src/                     # Type checking
-```
-
-**Windows (PowerShell or Command Prompt)**
-
-```powershell
-python -m pytest tests/ -v
-python -m pytest --cov=src tests/
-ruff check --fix src/
-ruff format src/
-mypy src/
+uv run pytest tests/ -v              # Tests
+uv run pytest --cov=src tests/       # Coverage
+uv run ruff check --fix src/         # Lint
+uv run ruff format src/              # Format
+uv run mypy src/                     # Type checking
 ```
 
 Pytest, Ruff, and mypy are configured in `pyproject.toml`; run commands from the project root.
