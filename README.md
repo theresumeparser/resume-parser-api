@@ -203,6 +203,24 @@ src/
 │   └── factory.py           # Provider factory
 ```
 
+**Tests**
+
+```
+tests/
+├── conftest.py              # Shared fixtures (client, auth override, sample files)
+├── unit/                    # Pure logic tests — no FastAPI app, no AsyncClient
+│   └── (tests added as extraction/pipeline logic is built)
+├── integration/             # Full app via AsyncClient; external deps mocked via DI
+│   ├── conftest.py          # Integration-specific fixtures (root conftest inherited)
+│   ├── test_health.py
+│   ├── test_auth.py
+│   └── test_parse.py
+└── e2e/                    # Real external services; skipped by default (marker: e2e)
+    └── (added when OpenRouter integration is built)
+```
+
+Run all tests: `pytest tests/ -v`. Run only integration: `pytest tests/integration/ -v`. Exclude e2e: `pytest tests/ -v -m "not e2e"`.
+
 ## API Protection
 
 All endpoints require a valid API key in the `X-API-Key` header. Authentication is abstracted behind a provider interface — the default implementation validates keys from environment variables, but you can implement a database-backed provider for production use.
@@ -242,6 +260,17 @@ The response also includes `pages` (number of document pages) and `ocr_used` (wh
 ## Development
 
 Install dev dependencies: `pip install -r requirements-dev.txt`
+
+**Tests**
+
+| Command | What runs |
+| --- | --- |
+| `pytest tests/ -v` | All tests (unit + integration + e2e) |
+| `pytest tests/integration/ -v` | Integration only (FastAPI app, mocked deps) |
+| `pytest tests/unit/ -v` | Unit only (pure logic, no app) |
+| `pytest tests/ -v -m "not e2e"` | Skip e2e (no real external services) |
+
+Root `tests/conftest.py` provides shared fixtures (AsyncClient, auth stub, sample PDF). Integration tests use the full app with DI overrides; e2e tests hit real APIs and are marked with `@pytest.mark.e2e`.
 
 **Linux / macOS**
 
