@@ -1,11 +1,11 @@
 import io
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Generator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from src.auth.base import BaseAuthProvider
-from src.auth.factory import get_auth_provider, reset_auth_provider
+from src.auth.factory import reset_auth_provider
 from src.main import app
 
 TEST_API_KEY = "sk-parse-test-key"
@@ -23,7 +23,7 @@ class StubAuthProvider(BaseAuthProvider):
 
 
 @pytest.fixture(autouse=True)
-def _override_auth(monkeypatch: pytest.MonkeyPatch) -> None:
+def _override_auth(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     """Replace auth provider with a test stub for all tests."""
     reset_auth_provider()
     _stub = StubAuthProvider()
@@ -31,7 +31,7 @@ def _override_auth(monkeypatch: pytest.MonkeyPatch) -> None:
         "src.auth.factory._instance",
         _stub,
     )
-    yield  # type: ignore[misc]
+    yield
     reset_auth_provider()
 
 

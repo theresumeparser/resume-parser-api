@@ -1,4 +1,6 @@
 import logging
+from typing import cast
+
 import structlog
 
 from src.config import settings
@@ -32,4 +34,4 @@ def setup_logging() -> None:
 
 
 def get_logger(name: str) -> structlog.stdlib.BoundLogger:
-    return structlog.get_logger(name)
+    return cast(structlog.stdlib.BoundLogger, structlog.get_logger(name))

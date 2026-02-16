@@ -287,7 +287,7 @@ docker run -p 8000:8000 --env-file .env resume-parser-api
 ## Roadmap
 
 - [x] Project scaffolding and README
-- [ ] API key authentication (abstract provider + env default)
+- [x] API key authentication (abstract provider + env default)
 - [ ] Rate limiting per key (SlowAPI)
 - [ ] Algorithmic text extraction (PDF, DOCX)
 - [ ] Text quality scoring heuristic

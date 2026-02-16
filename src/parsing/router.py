@@ -1,6 +1,6 @@
 import time
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import ValidationError
 
 from src.auth.dependencies import require_api_key
@@ -11,6 +11,11 @@ from src.parsing.schemas import ParseMetadata, ParseOptions, ParseResponse
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["Parsing"])
+UPLOAD_FILE_PARAM = File(..., description="Resume file (PDF, DOCX, or image)")
+OPTIONS_FORM_PARAM = Form(
+    default=None,
+    description="JSON string with parse options (model_parse, model_ocr, ocr)",
+)
 
 
 @router.post(
@@ -26,11 +31,8 @@ router = APIRouter(prefix="/api/v1", tags=["Parsing"])
     },
 )
 async def parse_resume(
-    file: UploadFile = File(..., description="Resume file (PDF, DOCX, or image)"),
-    options: str | None = Form(
-        default=None,
-        description="JSON string with parse options (model_parse, model_ocr, ocr)",
-    ),
+    file: UploadFile = UPLOAD_FILE_PARAM,
+    options: str | None = OPTIONS_FORM_PARAM,
     key_identity: str = Depends(require_api_key),
 ) -> ParseResponse:
     start_time = time.monotonic()
@@ -41,12 +43,10 @@ async def parse_resume(
         try:
             parse_options = ParseOptions.model_validate_json(options)
         except ValidationError as e:
-            from fastapi import HTTPException
-
             raise HTTPException(
                 status_code=422,
                 detail=e.errors(),
-            )
+            ) from e
 
     # Validate the uploaded file
     await validate_upload(file)

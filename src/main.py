@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import FastAPI
 
 from src.config import settings
@@ -9,15 +11,25 @@ setup_logging()
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(
-        title="Resume Parser API",
-        description="Parse resumes into structured JSON with a smart extraction pipeline.",
-        version="0.1.0",
-    )
+    app_config: dict[str, Any] = {
+        "title": "Resume Parser API",
+        "description": (
+            "Parse resumes into structured JSON with a smart extraction "
+            "pipeline."
+        ),
+        "version": "0.1.0",
+    }
 
-    # Hide docs in production if desired
-    if settings.LOG_LEVEL.lower() == "production":
-        app.openapi_url = None
+    if not settings.show_docs:
+        app_config.update(
+            {
+                "openapi_url": None,
+                "docs_url": None,
+                "redoc_url": None,
+            }
+        )
+
+    app = FastAPI(**app_config)
 
     app.include_router(health_router)
     app.include_router(parsing_router)

@@ -2,6 +2,10 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    # Runtime environment
+    ENVIRONMENT: str = "local"
+    SHOW_DOCS_ENVIRONMENTS: str = "local,staging"
+
     # Auth
     AUTH_PROVIDER: str = "env"
     API_KEYS: str = ""
@@ -36,6 +40,15 @@ class Settings(BaseSettings):
     @property
     def max_file_size_bytes(self) -> int:
         return self.MAX_FILE_SIZE_MB * 1024 * 1024
+
+    @property
+    def show_docs(self) -> bool:
+        allowed = {
+            env.strip().lower()
+            for env in self.SHOW_DOCS_ENVIRONMENTS.split(",")
+            if env.strip()
+        }
+        return self.ENVIRONMENT.strip().lower() in allowed
 
 
 settings = Settings()

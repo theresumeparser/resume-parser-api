@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
 
-
 # -- Request schemas --
 
 
@@ -42,7 +41,7 @@ class ParseMetadata(BaseModel):
 
 class ParseResponse(BaseModel):
     success: bool
-    data: dict | None = Field(
+    data: dict[str, object] | None = Field(
         default=None,
         description="Structured resume data. None on failure.",
     )
