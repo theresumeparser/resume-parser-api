@@ -1,0 +1,24 @@
+# API framework
+fastapi==0.129.0
+uvicorn[standard]==0.40.0
+python-multipart==0.0.22
+
+# Validation & settings
+pydantic==2.12.5
+pydantic-settings==2.13.0
+
+# Rate limiting
+slowapi==0.1.9
+
+# Logging
+structlog==24.4.0
+
+# Text extraction (PDF, DOCX)
+pymupdf==1.27.1
+python-docx==1.2.0
+
+# LLM orchestration
+langgraph==1.0.8
+
+# HTTP client (for LLM provider calls)
+httpx==0.28.1
