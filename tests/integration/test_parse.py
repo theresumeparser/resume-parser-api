@@ -50,11 +50,15 @@ async def test_parse_with_options(
     auth_headers: dict[str, str],
     sample_pdf_bytes: bytes,
 ) -> None:
-    options = json.dumps({
-        "model_parse": "anthropic/claude-haiku",
-        "model_ocr": "google/gemini-flash-1.5",
-        "ocr": "force",
-    })
+    options = json.dumps(
+        {
+            "parse_models": (
+                "openrouter/google/gemini-flash-1.5,openrouter/openai/gpt-4o-mini"
+            ),
+            "ocr_models": "openrouter/google/gemini-flash-1.5",
+            "ocr": "force",
+        }
+    )
     response = await client.post(
         "/api/v1/parse",
         headers=auth_headers,

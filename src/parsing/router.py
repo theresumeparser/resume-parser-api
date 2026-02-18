@@ -1,6 +1,15 @@
 import time
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+)
 from pydantic import ValidationError
 
 from src.auth.dependencies import require_api_key
@@ -16,7 +25,7 @@ router = APIRouter(prefix="/api/v1", tags=["Parsing"])
 UPLOAD_FILE_PARAM = File(..., description="Resume file (PDF, DOCX, or image)")
 OPTIONS_FORM_PARAM = Form(
     default=None,
-    description="JSON string with parse options (model_parse, model_ocr, ocr)",
+    description="JSON string with parse options (parse_models, ocr_models, ocr)",
 )
 
 
@@ -64,8 +73,8 @@ async def parse_resume(
         key_identity=key_identity,
         filename=filename,
         content_type=content_type,
-        model_parse=parse_options.model_parse,
-        model_ocr=parse_options.model_ocr,
+        parse_models=parse_options.parse_models,
+        ocr_models=parse_options.ocr_models,
         ocr=parse_options.ocr,
     )
 

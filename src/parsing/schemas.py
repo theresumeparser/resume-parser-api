@@ -4,13 +4,22 @@ from pydantic import BaseModel, Field
 
 
 class ParseOptions(BaseModel):
-    model_parse: str | None = Field(
+    parse_models: str | None = Field(
         default=None,
-        description="Override the default parse model (e.g. 'openai/gpt-4o-mini')",
+        description=(
+            "Override the default parse model chain. Comma-separated, "
+            "provider-prefixed entries tried left to right "
+            "(e.g. 'openrouter/google/gemini-flash-1.5,openrouter/openai/gpt-4o-mini')"
+        ),
     )
-    model_ocr: str | None = Field(
+    ocr_models: str | None = Field(
         default=None,
-        description="Override the default OCR model (e.g. 'google/gemini-flash-1.5')",
+        description=(
+            "Override the default OCR model chain. Comma-separated, "
+            "provider-prefixed entries tried left to right. "
+            "Set to 'none' to skip OCR for this request "
+            "(e.g. 'openrouter/google/gemini-flash-1.5')"
+        ),
     )
     ocr: str = Field(
         default="auto",

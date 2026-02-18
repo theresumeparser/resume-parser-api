@@ -80,18 +80,15 @@ AUTH_PROVIDER=env                    # "env" (default) or implement your own (e.
 API_KEYS=sk-parse-abc123,sk-parse-def456
 RATE_LIMIT=60/minute                 # Per-key rate limit
 
-# LLM Provider: "openrouter" (more coming)
-LLM_PROVIDER=openrouter
-
-# Provider credentials
+# Provider credentials (only configure providers you reference in model chains)
 OPENROUTER_API_KEY=sk-or-...
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 
-# Default models — base (cheap/fast) and advanced (capable/fallback)
-DEFAULT_BASE_MODEL_OCR=google/gemini-flash-1.5
-DEFAULT_ADVANCED_MODEL_OCR=google/gemini-pro-vision
-DEFAULT_BASE_MODEL_PARSE=google/gemini-flash-1.5
-DEFAULT_ADVANCED_MODEL_PARSE=openai/gpt-4o-mini
+# Model chains — ordered left to right, provider prefix required
+# Format: provider/model_name (comma-separated for fallback chain)
+# OCR accepts "none" to disable OCR entirely
+DEFAULT_OCR_MODELS=openrouter/google/gemini-flash-1.5,openrouter/google/gemini-pro-vision
+DEFAULT_PARSE_MODELS=openrouter/google/gemini-flash-1.5,openrouter/openai/gpt-4o-mini
 
 # Limits
 MAX_FILE_SIZE_MB=10
@@ -99,7 +96,11 @@ REQUEST_TIMEOUT_SECONDS=60
 LOG_LEVEL=info
 ```
 
-All default models can be overridden per request via the API payload.
+**Model chains** define the escalation order. The pipeline tries models left to right — if the first model's output fails validation, the next model in the chain is tried. Each entry includes a provider prefix (`openrouter/`, `anthropic/`, `openai/`) so different models in the same chain can use different providers.
+
+Set `DEFAULT_OCR_MODELS=none` to disable OCR entirely (useful when inputs are always clean PDFs with selectable text).
+
+All default chains can be overridden per request via the API payload.
 
 ### Run
 
@@ -121,13 +122,22 @@ curl -X POST http://localhost:8000/api/v1/parse \
   -F "file=@resume.pdf"
 ```
 
-With model overrides:
+With model chain overrides:
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/parse \
   -H "X-API-Key: sk-parse-abc123" \
   -F "file=@resume.pdf" \
-  -F 'options={"model_parse": "anthropic/claude-haiku", "model_ocr": "google/gemini-flash-1.5"}'
+  -F 'options={"parse_models": "openrouter/google/gemini-flash-1.5,openrouter/openai/gpt-4o-mini", "ocr_models": "openrouter/google/gemini-flash-1.5"}'
+```
+
+Skip OCR for a single request:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/parse \
+  -H "X-API-Key: sk-parse-abc123" \
+  -F "file=@resume.pdf" \
+  -F 'options={"ocr_models": "none"}'
 ```
 
 Response:
@@ -182,10 +192,10 @@ src/
 ├── ocr/                     # (Planned) OCR via vision models
 ├── llm/                     # (Planned) LLM structured extraction and prompts
 ├── pipeline/                # (Planned) LangGraph graph, state, and nodes
-├── providers/               # (Planned) LLM provider abstraction layer
+├── providers/               # LLM provider abstraction layer
 │   ├── base.py              # Abstract provider interface
-│   ├── openrouter.py        # OpenRouter implementation
-│   └── factory.py           # Provider factory
+│   ├── openrouter.py        # (Planned) OpenRouter implementation
+│   └── factory.py           # Provider factory (resolves by ModelRef.provider)
 ```
 
 **Tests**
@@ -227,7 +237,12 @@ X-RateLimit-Reset: 1708300800
 
 ## Provider Abstraction
 
-The API is not locked to any single LLM vendor. All model calls go through an abstract provider interface. OpenRouter ships as the default — to add a new provider (direct OpenAI, Anthropic, Azure, etc.), implement the interface and register it in the factory. Switch providers via the `LLM_PROVIDER` environment variable.
+The API is not locked to any single LLM vendor. All model calls go through an abstract provider interface. Each model chain entry includes a provider prefix (e.g. `openrouter/`, `anthropic/`, `openai/`), so different models in the same chain can use different providers. OpenRouter ships as the default — to add a new provider (direct OpenAI, Anthropic, Azure, etc.), implement the `BaseProvider` interface in `src/providers/` and register it in the factory. Only providers referenced in your model chains need credentials configured.
+
+```env
+# Mix providers in a single chain
+DEFAULT_PARSE_MODELS=openrouter/google/gemini-flash-1.5,anthropic/claude-haiku
+```
 
 ## Usage Reporting
 
