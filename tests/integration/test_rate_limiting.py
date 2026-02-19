@@ -1,7 +1,27 @@
 import io
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import AsyncClient
+
+from src.llm.schemas import PersonalInfo, ResumeData
+from src.parsing.schemas import ParseMetadata
+from src.pipeline.service import PipelineResult
+
+
+def _stub_pipeline_result() -> PipelineResult:
+    return PipelineResult(
+        success=True,
+        data=ResumeData(personal_info=PersonalInfo(name="Test")),
+        metadata=ParseMetadata(
+            extraction_method="algorithmic",
+            ocr_used=False,
+            pages=1,
+            processing_time_ms=0,
+            usage=[],
+        ),
+        error=None,
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -13,6 +33,17 @@ def rate_limit_3_per_minute(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(src.config.settings, "RATE_LIMIT", "3/minute")
     yield
     monkeypatch.setattr(src.config.settings, "RATE_LIMIT", original)
+
+
+@pytest.fixture(autouse=True)
+def _mock_pipeline():
+    """Mock the pipeline so parse requests succeed without real API calls."""
+    with patch(
+        "src.parsing.router.run_pipeline",
+        new_callable=AsyncMock,
+        return_value=_stub_pipeline_result(),
+    ):
+        yield
 
 
 async def test_rate_limit_headers_present(

@@ -315,9 +315,9 @@ docker run -p 8000:8000 --env-file .env resume-parser-api
 - [x] OpenRouter provider implementation
 - [x] LLM structured extraction with prompt engineering
 - [x] OCR via vision model 
-- [ ] LangGraph pipeline wiring
-- [ ] Fallback model escalation on validation failure
-- [ ] Usage reporting (per-model token counts, page count)
+- [x] LangGraph pipeline wiring
+- [x] Fallback model escalation on validation failure
+- [x] Usage reporting (per-model token counts, page count)
 - [ ] Docker support
 - [ ] CI/CD pipeline
 

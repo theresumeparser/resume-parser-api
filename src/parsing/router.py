@@ -13,14 +13,12 @@ from fastapi import (
 from pydantic import ValidationError
 
 from src.auth.dependencies import require_api_key
+from src.config import parse_chain as parse_chain_fn
 from src.config import settings
-from src.extraction.base import ExtractionError
-from src.extraction.factory import extract_text
-from src.extraction.quality import score_text_quality
-from src.llm.schemas import PersonalInfo, ResumeData
 from src.logging import get_logger
 from src.parsing.dependencies import validate_upload
-from src.parsing.schemas import ParseMetadata, ParseOptions, ParseResponse
+from src.parsing.schemas import ParseOptions, ParseResponse
+from src.pipeline.service import run_pipeline
 from src.rate_limit import limiter
 
 logger = get_logger(__name__)
@@ -55,7 +53,6 @@ async def parse_resume(
 ) -> ParseResponse:
     start_time = time.monotonic()
 
-    # Parse options from form field
     parse_options = ParseOptions()
     if options:
         try:
@@ -66,7 +63,6 @@ async def parse_resume(
                 detail=e.errors(),
             ) from e
 
-    # Validate the uploaded file
     await validate_upload(file)
 
     filename = file.filename or "unknown"
@@ -84,34 +80,43 @@ async def parse_resume(
 
     content = await file.read()
 
-    try:
-        extraction_result = extract_text(content, content_type, filename)
-    except ExtractionError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    p_chain = (
+        parse_chain_fn(parse_options.parse_models, "parse_models")
+        if parse_options.parse_models
+        else settings.parse_model_chain
+    )
 
-    quality = score_text_quality(extraction_result)
+    ocr_models_raw = parse_options.ocr_models
+    if ocr_models_raw and ocr_models_raw.strip().lower() == "none":
+        o_chain = []
+    elif ocr_models_raw:
+        o_chain = parse_chain_fn(ocr_models_raw, "ocr_models")
+    else:
+        o_chain = settings.ocr_model_chain
 
-    # TODO: Replace with actual pipeline execution
-    # For now, return extraction results as metadata with a stub data response
+    result = await run_pipeline(
+        content=content,
+        content_type=content_type,
+        filename=filename,
+        parse_chain=p_chain,
+        ocr_chain=o_chain,
+        ocr_preference=parse_options.ocr,
+    )
+
     elapsed_ms = int((time.monotonic() - start_time) * 1000)
+    result.metadata.processing_time_ms = elapsed_ms
 
     logger.info(
         "parse_request_completed",
         key_identity=key_identity,
         filename=filename,
-        extraction_method=extraction_result.method,
-        text_sufficient=quality.is_sufficient,
+        extraction_method=result.metadata.extraction_method,
         processing_time_ms=elapsed_ms,
     )
 
     return ParseResponse(
-        success=True,
-        data=ResumeData(personal_info=PersonalInfo(name="")),
-        metadata=ParseMetadata(
-            extraction_method=extraction_result.method,
-            ocr_used=False,
-            pages=extraction_result.pages,
-            processing_time_ms=elapsed_ms,
-            usage=[],
-        ),
+        success=result.success,
+        data=result.data,
+        metadata=result.metadata,
+        error=result.error,
     )
