@@ -108,6 +108,7 @@ async def test_chat_raises_on_invalid_response_structure(
 
 
 def test_extract_usage_normal() -> None:
+    provider = OpenRouterProvider(api_key="sk-test", base_url="https://openrouter.ai/api/v1")
     response = {
         "usage": {
             "prompt_tokens": 1820,
@@ -115,18 +116,20 @@ def test_extract_usage_normal() -> None:
             "total_tokens": 2760,
         }
     }
-    usage = OpenRouterProvider.extract_usage(response)
+    usage = provider.extract_usage(response)
     assert usage["input_tokens"] == 1820
     assert usage["output_tokens"] == 940
 
 
 def test_extract_usage_missing() -> None:
-    usage = OpenRouterProvider.extract_usage({})
+    provider = OpenRouterProvider(api_key="sk-test", base_url="https://openrouter.ai/api/v1")
+    usage = provider.extract_usage({})
     assert usage["input_tokens"] == 0
     assert usage["output_tokens"] == 0
 
 
 def test_extract_content_normal() -> None:
+    provider = OpenRouterProvider(api_key="sk-test", base_url="https://openrouter.ai/api/v1")
     response = {
         "model": "google/gemini-flash-1.5",
         "choices": [
@@ -139,14 +142,15 @@ def test_extract_content_normal() -> None:
             }
         ],
     }
-    content = OpenRouterProvider.extract_content(response)
+    content = provider.extract_content(response)
     assert content == "Hello, world!"
 
 
 def test_extract_content_missing_raises() -> None:
+    provider = OpenRouterProvider(api_key="sk-test", base_url="https://openrouter.ai/api/v1")
     response = {"model": "google/gemini-flash-1.5", "choices": []}
     with pytest.raises(ProviderError):
-        OpenRouterProvider.extract_content(response)
+        provider.extract_content(response)
 
 
 async def test_default_temperature_is_zero(monkeypatch: pytest.MonkeyPatch) -> None:

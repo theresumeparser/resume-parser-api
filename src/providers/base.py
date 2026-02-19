@@ -36,3 +36,13 @@ class BaseProvider(ABC):
             Raw response from the provider API.
         """
         ...
+
+    @abstractmethod
+    def extract_content(self, response: dict[str, Any]) -> str:
+        """Extract the assistant message content from a provider response."""
+        ...
+
+    @abstractmethod
+    def extract_usage(self, response: dict[str, Any]) -> dict[str, int]:
+        """Extract token usage (input_tokens, output_tokens) from a provider response."""
+        ...

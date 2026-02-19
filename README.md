@@ -313,7 +313,7 @@ docker run -p 8000:8000 --env-file .env resume-parser-api
 - [x] Type checking (mypy strict)
 - [x] Pydantic v2 output schema and LLM response validation
 - [x] OpenRouter provider implementation
-- [ ] LLM structured extraction with prompt engineering
+- [x] LLM structured extraction with prompt engineering
 - [ ] OCR via vision model (base + advanced)
 - [ ] LangGraph pipeline wiring
 - [ ] Fallback model escalation on validation failure

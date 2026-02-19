@@ -138,8 +138,7 @@ class OpenRouterProvider(BaseProvider):
 
         return payload
 
-    @staticmethod
-    def extract_usage(response: dict[str, Any]) -> dict[str, int]:
+    def extract_usage(self, response: dict[str, Any]) -> dict[str, int]:
         """Extract token usage from an OpenRouter response.
 
         Returns dict with keys: input_tokens, output_tokens.
@@ -151,8 +150,7 @@ class OpenRouterProvider(BaseProvider):
             "output_tokens": int(usage.get("completion_tokens", 0) or 0),
         }
 
-    @staticmethod
-    def extract_content(response: dict[str, Any]) -> str:
+    def extract_content(self, response: dict[str, Any]) -> str:
         """Extract the assistant message content from an OpenRouter response.
 
         Raises ProviderError if the response structure is unexpected.
