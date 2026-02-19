@@ -6,13 +6,11 @@ from src.exceptions import FileTooLarge, UnsupportedFileType
 ALLOWED_CONTENT_TYPES = {
     "application/pdf",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "image/png",
-    "image/jpeg",
-    "image/webp",
-    "image/tiff",
+    "text/markdown",
+    "text/plain",
 }
 
-ALLOWED_EXTENSIONS = {".pdf", ".docx", ".png", ".jpg", ".jpeg", ".webp", ".tiff"}
+ALLOWED_EXTENSIONS = {".pdf", ".docx", ".md", ".txt"}
 
 
 async def validate_upload(file: UploadFile) -> UploadFile:

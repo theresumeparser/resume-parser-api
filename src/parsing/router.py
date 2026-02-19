@@ -14,6 +14,9 @@ from pydantic import ValidationError
 
 from src.auth.dependencies import require_api_key
 from src.config import settings
+from src.extraction.base import ExtractionError
+from src.extraction.factory import extract_text
+from src.extraction.quality import score_text_quality
 from src.logging import get_logger
 from src.parsing.dependencies import validate_upload
 from src.parsing.schemas import ParseMetadata, ParseOptions, ParseResponse
@@ -22,7 +25,7 @@ from src.rate_limit import limiter
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["Parsing"])
-UPLOAD_FILE_PARAM = File(..., description="Resume file (PDF, DOCX, or image)")
+UPLOAD_FILE_PARAM = File(..., description="Resume file (PDF, DOCX, MD, or TXT)")
 OPTIONS_FORM_PARAM = Form(
     default=None,
     description="JSON string with parse options (parse_models, ocr_models, ocr)",
@@ -78,14 +81,25 @@ async def parse_resume(
         ocr=parse_options.ocr,
     )
 
+    content = await file.read()
+
+    try:
+        extraction_result = extract_text(content, content_type, filename)
+    except ExtractionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    quality = score_text_quality(extraction_result)
+
     # TODO: Replace with actual pipeline execution
-    # For now, return a stub successful response
+    # For now, return extraction results as metadata with a stub data response
     elapsed_ms = int((time.monotonic() - start_time) * 1000)
 
     logger.info(
         "parse_request_completed",
         key_identity=key_identity,
         filename=filename,
+        extraction_method=extraction_result.method,
+        text_sufficient=quality.is_sufficient,
         processing_time_ms=elapsed_ms,
     )
 
@@ -101,9 +115,9 @@ async def parse_resume(
             "languages": [],
         },
         metadata=ParseMetadata(
-            extraction_method="stub",
+            extraction_method=extraction_result.method,
             ocr_used=False,
-            pages=0,
+            pages=extraction_result.pages,
             processing_time_ms=elapsed_ms,
             usage=[],
         ),

@@ -81,12 +81,20 @@ def invalid_auth_headers() -> dict[str, str]:
 
 @pytest.fixture
 def sample_pdf_bytes() -> bytes:
-    """Minimal valid-ish PDF bytes for upload testing.
+    """Minimal valid PDF with selectable text, created via PyMuPDF."""
+    import fitz
 
-    This is not a real PDF — just enough to pass the upload endpoint.
-    Real PDF parsing tests will use actual fixture files.
-    """
-    return b"%PDF-1.4 fake resume content for testing"
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text(
+        (72, 72),
+        "John Doe\nSoftware Engineer\n"
+        "Experienced developer with skills in Python, FastAPI, and Docker.\n"
+        "Education: B.S. Computer Science",
+    )
+    data = doc.tobytes()
+    doc.close()
+    return data
 
 
 @pytest.fixture
