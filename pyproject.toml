@@ -34,7 +34,7 @@ pythonpath = ["."]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short -m 'not e2e'"
 markers = ["e2e: hits real external services (deselect with '-m not e2e')"]
 
 [tool.ruff]

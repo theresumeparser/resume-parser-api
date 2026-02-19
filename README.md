@@ -210,8 +210,12 @@ tests/
 │   ├── test_health.py
 │   ├── test_auth.py
 │   └── test_parse.py
-└── e2e/                    # Real external services; skipped by default (marker: e2e)
-    └── (added when OpenRouter integration is built)
+└── e2e/                     # Real external services; skipped by default (marker: e2e)
+    ├── conftest.py          # Server lifecycle fixture (starts/stops uvicorn subprocess)
+    ├── test_parse_e2e.py    # Parse tests against real OpenRouter models
+    └── fixtures/            # Sample resume files used by e2e tests
+        ├── senior-backend-developer.pdf
+        └── senior-backend-developer.png
 ```
 
 Run all tests: `uv run pytest tests/ -v`. Run only integration: `uv run pytest tests/integration/ -v`. Exclude e2e: `uv run pytest tests/ -v -m "not e2e"`.
@@ -265,12 +269,25 @@ Install dev dependencies: `uv sync --all-extras`
 
 | Command | What runs |
 | --- | --- |
-| `uv run pytest tests/ -v` | All tests (unit + integration + e2e) |
-| `uv run pytest tests/integration/ -v` | Integration only (FastAPI app, mocked deps) |
-| `uv run pytest tests/unit/ -v` | Unit only (pure logic, no app) |
-| `uv run pytest tests/ -v -m "not e2e"` | Skip e2e (no real external services) |
+| `uv run pytest tests/` | Unit + integration (e2e excluded by default) |
+| `uv run pytest tests/integration/` | Integration only (FastAPI app, mocked deps) |
+| `uv run pytest tests/unit/` | Unit only (pure logic, no app) |
+| `uv run pytest tests/e2e/ -m e2e -s` | E2e only (real server + OpenRouter, costs money) |
 
 Root `tests/conftest.py` provides shared fixtures (AsyncClient, auth stub, sample PDF). Integration tests use the full app with DI overrides; e2e tests hit real APIs and are marked with `@pytest.mark.e2e`.
+
+**End-to-end tests**
+
+E2e tests start a real uvicorn server as a subprocess, upload sample resumes from `tests/e2e/fixtures/`, call the OpenRouter API with real models, and validate the parsed output. They require a configured `.env` with a valid `OPENROUTER_API_KEY` and at least one entry in `API_KEYS`.
+
+```bash
+# Run e2e tests only (requires network + valid .env)
+uv run pytest tests/e2e/ -m e2e -v -s
+```
+
+Each run creates a temporary results directory (printed at the start) containing:
+- One JSON file per test with the full parsed response
+- `run.log` with the complete server console output (structlog + uvicorn access logs)
 
 ```bash
 uv run pytest tests/ -v              # Tests
