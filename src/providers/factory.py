@@ -30,10 +30,12 @@ def _create_provider(name: str) -> BaseProvider:
     provider modules from being loaded.
     """
     if name == "openrouter":
-        # TODO: Implement OpenRouterProvider in src/providers/openrouter.py
-        raise NotImplementedError(
-            "OpenRouter provider is not yet implemented. "
-            "This will be added in the provider implementation ticket."
+        from src.config import settings
+        from src.providers.openrouter import OpenRouterProvider
+
+        return OpenRouterProvider(
+            api_key=settings.OPENROUTER_API_KEY,
+            base_url=settings.OPENROUTER_BASE_URL,
         )
 
     if name == "anthropic":
