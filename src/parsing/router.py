@@ -17,6 +17,7 @@ from src.config import settings
 from src.extraction.base import ExtractionError
 from src.extraction.factory import extract_text
 from src.extraction.quality import score_text_quality
+from src.llm.schemas import PersonalInfo, ResumeData
 from src.logging import get_logger
 from src.parsing.dependencies import validate_upload
 from src.parsing.schemas import ParseMetadata, ParseOptions, ParseResponse
@@ -105,15 +106,7 @@ async def parse_resume(
 
     return ParseResponse(
         success=True,
-        data={
-            "personal_info": {},
-            "summary": None,
-            "experience": [],
-            "education": [],
-            "skills": [],
-            "certifications": [],
-            "languages": [],
-        },
+        data=ResumeData(personal_info=PersonalInfo(name="")),
         metadata=ParseMetadata(
             extraction_method=extraction_result.method,
             ocr_used=False,

@@ -306,20 +306,19 @@ docker run -p 8000:8000 --env-file .env resume-parser-api
 - [x] Project scaffolding and README
 - [x] API key authentication (abstract provider + env default)
 - [x] Rate limiting per key (SlowAPI)
-- [ ] Algorithmic text extraction (PDF, DOCX)
-- [ ] Text quality scoring heuristic
-- [ ] Pydantic v2 output schema and LLM response validation
-- [ ] Provider abstraction layer
+- [x] Algorithmic text extraction (PDF, DOCX)
+- [x] Text quality scoring heuristic
+- [x] Provider abstraction layer
+- [x] Structured logging (structlog)
+- [x] Type checking (mypy strict)
+- [x] Pydantic v2 output schema and LLM response validation
 - [ ] OpenRouter provider implementation
-- [ ] LangGraph pipeline wiring
-- [ ] OCR via vision model (base + advanced)
 - [ ] LLM structured extraction with prompt engineering
+- [ ] OCR via vision model (base + advanced)
+- [ ] LangGraph pipeline wiring
 - [ ] Fallback model escalation on validation failure
 - [ ] Usage reporting (per-model token counts, page count)
-- [ ] Structured logging (structlog)
 - [ ] Docker support
-- [ ] Test suite with sample resumes (pytest + pytest-asyncio)
-- [ ] Type checking (mypy strict)
 - [ ] CI/CD pipeline
 
 ## Contributing

@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from src.llm.schemas import ResumeData
+
 # -- Request schemas --
 
 
@@ -50,7 +52,7 @@ class ParseMetadata(BaseModel):
 
 class ParseResponse(BaseModel):
     success: bool
-    data: dict[str, object] | None = Field(
+    data: ResumeData | None = Field(
         default=None,
         description="Structured resume data. None on failure.",
     )
