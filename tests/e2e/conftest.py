@@ -1,11 +1,17 @@
-"""Fixtures for end-to-end tests that start a real API server subprocess."""
+"""Fixtures for end-to-end tests that start a real API server subprocess.
+
+CLI options (passed via ``pytest --option``):
+  --file          Path to resume file (default: fixtures/senior-backend-developer.pdf)
+  --parse-model   Parse model identifier (default: server-configured)
+  --ocr-model     OCR model identifier, "none" to skip (default: none)
+"""
 
 from __future__ import annotations
 
 import subprocess
 import sys
-import tempfile
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Generator
 
@@ -15,15 +21,66 @@ import pytest
 SERVER_PORT = 9876
 BASE_URL = f"http://127.0.0.1:{SERVER_PORT}"
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+E2E_DIR = Path(__file__).resolve().parent
 
 STARTUP_TIMEOUT_S = 30
 SHUTDOWN_TIMEOUT_S = 10
 
 
+# ---------------------------------------------------------------------------
+# CLI options
+# ---------------------------------------------------------------------------
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--file",
+        default=None,
+        help="Path to resume file (default: fixtures/senior-backend-developer.pdf)",
+    )
+    parser.addoption(
+        "--parse-model",
+        default=None,
+        help="Parse model, e.g. openrouter/google/gemini-2.5-flash (default: server-configured)",
+    )
+    parser.addoption(
+        "--ocr-model",
+        default="none",
+        help='OCR model, "none" to skip (default: none)',
+    )
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def resume_file(request: pytest.FixtureRequest) -> Path:
+    raw = request.config.getoption("--file")
+    if raw:
+        p = Path(raw).resolve()
+        assert p.is_file(), f"Resume file not found: {p}"
+        return p
+    return E2E_DIR / "fixtures" / "senior-backend-developer.pdf"
+
+
+@pytest.fixture(scope="module")
+def parse_model(request: pytest.FixtureRequest) -> str | None:
+    return request.config.getoption("--parse-model")
+
+
+@pytest.fixture(scope="module")
+def ocr_model(request: pytest.FixtureRequest) -> str:
+    return request.config.getoption("--ocr-model")
+
+
 @pytest.fixture(scope="module")
 def results_dir() -> Path:
-    """Persistent temp directory where parsed JSON results and logs are saved."""
-    d = Path(tempfile.mkdtemp(prefix="resume_e2e_"))
+    """Timestamped directory inside fixtures/output for this test run's results."""
+    stamp = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
+    d = E2E_DIR / "fixtures" / "output" / stamp
+    d.mkdir(parents=True, exist_ok=True)
     print(f"\n  E2E results directory: {d}")
     return d
 

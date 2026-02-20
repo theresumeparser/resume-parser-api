@@ -278,15 +278,35 @@ Root `tests/conftest.py` provides shared fixtures (AsyncClient, auth stub, sampl
 
 **End-to-end tests**
 
-E2e tests start a real uvicorn server as a subprocess, upload sample resumes from `tests/e2e/fixtures/`, call the OpenRouter API with real models, and validate the parsed output. They require a configured `.env` with a valid `OPENROUTER_API_KEY` and at least one entry in `API_KEYS`.
+E2e tests start a real uvicorn server as a subprocess, upload a resume, call the OpenRouter API with real models, and validate the parsed output. They require a configured `.env` with a valid `OPENROUTER_API_KEY` and at least one entry in `API_KEYS`.
+
+| Option | Description | Default |
+| --- | --- | --- |
+| `--file` | Path to resume file | `fixtures/senior-backend-developer.pdf` |
+| `--parse-model` | Parse model identifier | Server-configured default |
+| `--ocr-model` | OCR model identifier (`"none"` to skip) | `none` (OCR skipped) |
 
 ```bash
-# Run e2e tests only (requires network + valid .env)
+# Default: built-in PDF, server-configured models, no OCR
 uv run pytest tests/e2e/ -m e2e -v -s
+
+# Gemini 2.5 Flash
+uv run pytest tests/e2e/ -m e2e -v -s --parse-model "openrouter/google/gemini-2.5-flash"
+
+# Grok 4.1 Fast
+uv run pytest tests/e2e/ -m e2e -v -s --parse-model "openrouter/x-ai/grok-4.1-fast"
+
+# Gemini with forced OCR
+uv run pytest tests/e2e/ -m e2e -v -s \
+  --parse-model "openrouter/google/gemini-2.5-flash" \
+  --ocr-model "openrouter/google/gemini-2.5-flash"
+
+# Custom resume file
+uv run pytest tests/e2e/ -m e2e -v -s --file path/to/resume.pdf
 ```
 
-Each run creates a temporary results directory (printed at the start) containing:
-- One JSON file per test with the full parsed response
+Each run creates a timestamped results directory under `tests/e2e/fixtures/output/` containing:
+- A JSON file with the full parsed response (named after the file and model)
 - `run.log` with the complete server console output (structlog + uvicorn access logs)
 
 ```bash
