@@ -1,6 +1,6 @@
 # Resume Parser API
 
-An open-source resume parsing engine built with **FastAPI**, **LangGraph**, and **Pydantic**. Upload a resume in any format and get back clean, structured JSON — powered by a smart extraction pipeline that tries the cheapest approach first and escalates only when needed.
+An open-source resume parsing engine built with **FastAPI**, **LangGraph**, and **Pydantic**. Upload a resume as PDF, DOCX, MD, or TXT and get back clean, structured JSON — powered by a smart extraction pipeline that tries the cheapest approach first and escalates only when needed.
 
 Built as a stateless microservice. No database, no billing — just parsing. Designed to be called from any backend.
 
@@ -23,7 +23,7 @@ Built as a stateless microservice. No database, no billing — just parsing. Des
 ## How It Works
 
 ```
-  Upload file (PDF, DOCX, image)
+  Upload file (PDF, DOCX, MD, or TXT)
          │
          ▼
   ┌──────────────┐
@@ -131,13 +131,14 @@ curl -X POST http://localhost:8000/api/v1/parse \
   -F 'options={"parse_models": "openrouter/google/gemini-flash-1.5,openrouter/openai/gpt-4o-mini", "ocr_models": "openrouter/google/gemini-flash-1.5"}'
 ```
 
-Skip OCR for a single request:
+Skip OCR for a single request (`ocr_models: "none"`) or force/skip OCR (`ocr: "force"` or `"skip"`):
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/parse \
   -H "X-API-Key: sk-parse-abc123" \
   -F "file=@resume.pdf" \
   -F 'options={"ocr_models": "none"}'
+# Or: options={"ocr": "skip"} to never run OCR; ocr: "force" to always run it.
 ```
 
 Response:
@@ -178,6 +179,7 @@ src/
 ├── config.py                # Global settings
 ├── health.py                # Health check endpoint
 ├── logging.py               # Structlog setup
+├── rate_limit.py            # SlowAPI limiter instance
 ├── exceptions.py            # HTTP exception classes
 ├── auth/                    # API key auth and rate limiting
 │   ├── base.py              # Abstract auth provider interface
@@ -188,13 +190,30 @@ src/
 │   ├── router.py            # POST /api/v1/parse
 │   ├── dependencies.py      # File validation
 │   └── schemas.py           # ParseOptions, ParseResponse, etc.
-├── extraction/              # (Planned) Algorithmic text extraction (PDF, DOCX)
-├── ocr/                     # (Planned) OCR via vision models
-├── llm/                     # (Planned) LLM structured extraction and prompts
-├── pipeline/                # (Planned) LangGraph graph, state, and nodes
-├── providers/               # LLM provider abstraction layer
+├── extraction/              # Algorithmic text extraction
+│   ├── base.py              # ExtractionResult, ExtractionError
+│   ├── pdf.py               # PDF via PyMuPDF
+│   ├── docx.py              # DOCX via python-docx
+│   ├── quality.py           # Text quality scoring (triggers OCR when low)
+│   └── factory.py           # Dispatcher by content type / extension
+├── ocr/                     # OCR via vision models
+│   ├── service.py           # OCR pipeline (PDF→images, vision API)
+│   ├── prompts.py           # OCR prompt and message building
+│   └── imaging.py           # PDF pages → PNG images (PyMuPDF)
+├── llm/                     # LLM structured extraction
+│   ├── service.py           # Extract resume JSON with fallback chain
+│   ├── schemas.py           # Pydantic models for resume data
+│   ├── prompts.py           # Extraction prompts and JSON schema
+│   └── validation.py        # LLM output validation helpers
+├── pipeline/                # LangGraph pipeline
+│   ├── graph.py             # Graph definition and conditional edges
+│   ├── nodes.py             # extract, ocr, parse nodes
+│   ├── state.py             # PipelineState typings
+│   └── service.py           # run_pipeline entrypoint
+├── providers/               # LLM provider abstraction
 │   ├── base.py              # Abstract provider interface
-│   ├── openrouter.py        # (Planned) OpenRouter implementation
+│   ├── openrouter.py        # OpenRouter implementation
+│   ├── exceptions.py        # ProviderError and retry handling
 │   └── factory.py           # Provider factory (resolves by ModelRef.provider)
 ```
 
@@ -204,12 +223,18 @@ src/
 tests/
 ├── conftest.py              # Shared fixtures (client, auth override, sample files)
 ├── unit/                    # Pure logic tests — no FastAPI app, no AsyncClient
-│   └── (tests added as extraction/pipeline logic is built)
+│   ├── test_config.py
+│   ├── test_extraction/     # PDF, DOCX, factory, quality
+│   ├── test_llm/            # service, schemas, prompts, validation
+│   ├── test_ocr/            # service, prompts, imaging
+│   ├── test_pipeline/       # graph, nodes, routing
+│   └── test_providers/      # factory, openrouter
 ├── integration/             # Full app via AsyncClient; external deps mocked via DI
 │   ├── conftest.py          # Integration-specific fixtures (root conftest inherited)
 │   ├── test_health.py
 │   ├── test_auth.py
-│   └── test_parse.py
+│   ├── test_parse.py
+│   └── test_rate_limiting.py
 └── e2e/                     # Real external services; skipped by default (marker: e2e)
     ├── conftest.py          # Server lifecycle fixture (starts/stops uvicorn subprocess)
     ├── test_parse_e2e.py    # Parse tests against real OpenRouter models
@@ -218,7 +243,11 @@ tests/
         └── senior-backend-developer.png
 ```
 
-Run all tests: `uv run pytest tests/ -v`. Run only integration: `uv run pytest tests/integration/ -v`. Exclude e2e: `uv run pytest tests/ -v -m "not e2e"`.
+Run all tests: `uv run pytest tests/ -v`. E2E tests are excluded by default (marked with `@pytest.mark.e2e`).
+
+ Run only integration: `uv run pytest tests/integration/ -v`. 
+ 
+ Run only e2e tests, use `uv run pytest tests/e2e/ -m e2e -v -s`.
 
 ## API Protection
 
@@ -321,18 +350,18 @@ Pytest, Ruff, and mypy are configured in `pyproject.toml`; run commands from the
 
 **Docker**
 
-Pre-built images are published to GitHub Container Registry (GHCR). Replace `yourorg` with your GitHub org or username.
+Pre-built images are published to GitHub Container Registry (GHCR). 
 
 ```bash
 # Latest stable release
-docker pull ghcr.io/yourorg/resume-parser-api:latest
-docker run --rm -p 8000:8000 --env-file .env ghcr.io/yourorg/resume-parser-api:latest
+docker pull ghcr.io/theresumeparser/resume-parser-api:latest
+docker run --rm -p 8000:8000 --env-file .env ghcr.io/theresumeparser/resume-parser-api:latest
 
 # Specific version
-docker pull ghcr.io/yourorg/resume-parser-api:0.2.0
+docker pull ghcr.io/theresumeparser/resume-parser-api:0.1.0
 
 # Bleeding edge (latest main branch build)
-docker pull ghcr.io/yourorg/resume-parser-api:main
+docker pull ghcr.io/theresumeparser/resume-parser-api:main
 ```
 
 Build locally (use `--pull` for latest base image; pass `--build-arg VERSION=x.y.z` to set image metadata):
@@ -366,23 +395,12 @@ Verify: `curl http://localhost:8000/api/v1/health` should return `{"status":"ok"
 
 ## Roadmap
 
-- [x] Project scaffolding and README
-- [x] API key authentication (abstract provider + env default)
-- [x] Rate limiting per key (SlowAPI)
-- [x] Algorithmic text extraction (PDF, DOCX)
-- [x] Text quality scoring heuristic
-- [x] Provider abstraction layer
-- [x] Structured logging (structlog)
-- [x] Type checking (mypy strict)
-- [x] Pydantic v2 output schema and LLM response validation
-- [x] OpenRouter provider implementation
-- [x] LLM structured extraction with prompt engineering
-- [x] OCR via vision model 
-- [x] LangGraph pipeline wiring
-- [x] Fallback model escalation on validation failure
-- [x] Usage reporting (per-model token counts, page count)
-- [x] Docker support
-- [x] CI/CD pipeline
+- **Direct image upload** — Accept PNG/JPEG uploads and run OCR-only (no algorithmic extraction).
+- **More LLM providers** — Implement `BaseProvider` for direct OpenAI, Anthropic, and Azure; document in README.
+- **Database-backed auth** — Optional auth provider that validates API keys and rate limits from a database (e.g. PostgreSQL).
+- **Async / webhook mode** — reporting progress to the caller.
+- **Output variants** — Alternative schemas (e.g. ATS-focused, minimal) or configurable fields via options.
+- **Observability** — OpenTelemetry tracing and/or Prometheus metrics for pipeline steps and latency.
 
 ## Contributing
 
