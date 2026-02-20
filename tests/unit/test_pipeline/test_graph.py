@@ -11,7 +11,6 @@ from src.llm.schemas import PersonalInfo, ResumeData
 from src.llm.service import LLMExtractionResult
 from src.ocr.service import OCRResult
 from src.pipeline.graph import build_pipeline
-from src.providers.exceptions import ProviderError
 
 MODEL_A = ModelRef(provider="openrouter", model="google/gemini-flash-1.5")
 MODEL_B = ModelRef(provider="openrouter", model="openai/gpt-4o-mini")
@@ -106,9 +105,7 @@ async def test_full_pipeline_algorithmic_success(
 @patch("src.pipeline.nodes.ocr_extract", new_callable=AsyncMock)
 @patch("src.pipeline.nodes.score_text_quality")
 @patch("src.pipeline.nodes.extract_text")
-async def test_full_pipeline_with_ocr(
-    mock_extract, mock_quality, mock_ocr, mock_parse
-):
+async def test_full_pipeline_with_ocr(mock_extract, mock_quality, mock_ocr, mock_parse):
     poor_extraction = ExtractionResult(
         text="...",
         pages=1,
@@ -154,9 +151,7 @@ async def test_full_pipeline_with_ocr(
 @patch("src.pipeline.nodes.extract_resume_data", new_callable=AsyncMock)
 @patch("src.pipeline.nodes.score_text_quality")
 @patch("src.pipeline.nodes.extract_text")
-async def test_full_pipeline_parse_escalation(
-    mock_extract, mock_quality, mock_parse
-):
+async def test_full_pipeline_parse_escalation(mock_extract, mock_quality, mock_parse):
     mock_extract.return_value = GOOD_EXTRACTION
     mock_quality.return_value = GOOD_QUALITY
     mock_parse.side_effect = [_fail_result(), _success_result()]
@@ -190,9 +185,7 @@ async def test_full_pipeline_parse_escalation(
 @patch("src.pipeline.nodes.extract_resume_data", new_callable=AsyncMock)
 @patch("src.pipeline.nodes.score_text_quality")
 @patch("src.pipeline.nodes.extract_text")
-async def test_full_pipeline_all_models_fail(
-    mock_extract, mock_quality, mock_parse
-):
+async def test_full_pipeline_all_models_fail(mock_extract, mock_quality, mock_parse):
     mock_extract.return_value = GOOD_EXTRACTION
     mock_quality.return_value = GOOD_QUALITY
     mock_parse.side_effect = [_fail_result(), _fail_result()]

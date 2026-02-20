@@ -1,6 +1,6 @@
 """LangGraph definition: nodes, edges, and conditional routing."""
 
-from typing import Literal
+from typing import Any, Literal
 
 from langgraph.graph import END, START, StateGraph
 
@@ -49,9 +49,9 @@ def route_parse_result(state: PipelineState) -> Literal["done", "retry", "fail"]
     return "retry"
 
 
-def build_pipeline() -> StateGraph:
+def build_pipeline() -> Any:
     """Build and compile the resume parsing pipeline graph."""
-    graph = StateGraph(PipelineState)
+    graph: StateGraph[PipelineState] = StateGraph(PipelineState)
 
     graph.add_node("extract", extract_node)
     graph.add_node("check_ocr", check_ocr_node)

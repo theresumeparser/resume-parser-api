@@ -11,9 +11,9 @@ from __future__ import annotations
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from collections.abc import Generator
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Generator
 
 import httpx
 import pytest
@@ -41,7 +41,10 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         "--parse-model",
         default=None,
-        help="Parse model, e.g. openrouter/google/gemini-2.5-flash (default: server-configured)",
+        help=(
+            "Parse model, e.g. openrouter/google/gemini-2.5-flash "
+            "(default: server-configured)"
+        ),
     )
     parser.addoption(
         "--ocr-model",
@@ -78,7 +81,7 @@ def ocr_model(request: pytest.FixtureRequest) -> str:
 @pytest.fixture(scope="module")
 def results_dir() -> Path:
     """Timestamped directory inside fixtures/output for this test run's results."""
-    stamp = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
+    stamp = datetime.now(tz=UTC).strftime("%Y-%m-%d_%H-%M-%S")
     d = E2E_DIR / "fixtures" / "output" / stamp
     d.mkdir(parents=True, exist_ok=True)
     print(f"\n  E2E results directory: {d}")

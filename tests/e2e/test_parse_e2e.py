@@ -15,7 +15,7 @@ Requirements:
 
 Run:
   uv run pytest tests/e2e/ -m e2e -v -s
-  uv run pytest tests/e2e/ -m e2e -v -s --parse-model "openrouter/google/gemini-2.5-flash"
+  uv run pytest tests/e2e/ -m e2e -v -s --parse-model "openrouter/..."
 """
 
 from __future__ import annotations

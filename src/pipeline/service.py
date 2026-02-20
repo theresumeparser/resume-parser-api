@@ -1,6 +1,7 @@
 """Pipeline entry point called by the parse router."""
 
 from dataclasses import dataclass
+from typing import Any
 
 from src.config import ModelRef
 from src.llm.schemas import ResumeData
@@ -10,10 +11,10 @@ from src.pipeline.graph import build_pipeline
 
 logger = get_logger("pipeline.service")
 
-_pipeline = None
+_pipeline: Any = None
 
 
-def _get_pipeline():
+def _get_pipeline() -> Any:
     global _pipeline
     if _pipeline is None:
         _pipeline = build_pipeline()

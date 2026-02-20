@@ -44,5 +44,5 @@ class BaseProvider(ABC):
 
     @abstractmethod
     def extract_usage(self, response: dict[str, Any]) -> dict[str, int]:
-        """Extract token usage (input_tokens, output_tokens) from a provider response."""
+        """Extract token usage (input_tokens, output_tokens) from provider response."""
         ...

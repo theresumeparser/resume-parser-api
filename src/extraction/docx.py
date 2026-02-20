@@ -19,9 +19,7 @@ def extract_docx(content: bytes, filename: str) -> ExtractionResult:
             error=str(exc),
             filename=filename,
         )
-        raise ExtractionError(
-            f"Failed to open DOCX: {exc}", filename=filename
-        ) from exc
+        raise ExtractionError(f"Failed to open DOCX: {exc}", filename=filename) from exc
 
     paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
     paragraph_text = "\n".join(paragraphs)

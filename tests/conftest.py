@@ -1,3 +1,4 @@
+import contextlib
 import io
 from collections.abc import AsyncGenerator, Generator
 
@@ -50,10 +51,8 @@ def _reset_rate_limiter() -> Generator[None, None, None]:
     yield
     limiter_instance = getattr(app.state, "limiter", None)
     if limiter_instance is not None and hasattr(limiter_instance, "reset"):
-        try:
+        with contextlib.suppress(NotImplementedError, Exception):
             limiter_instance.reset()
-        except (NotImplementedError, Exception):
-            pass
 
 
 @pytest.fixture

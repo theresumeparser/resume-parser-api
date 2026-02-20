@@ -27,4 +27,3 @@ def test_unknown_provider_raises() -> None:
         assert "Unknown provider" in str(exc)
     else:
         raise AssertionError("Expected ValueError for unknown provider")
-

@@ -7,10 +7,9 @@ import pytest
 from src.config import ModelRef
 from src.extraction.base import ExtractionError, ExtractionResult
 from src.extraction.quality import TextQuality
-from src.llm.service import LLMExtractionResult
 from src.llm.schemas import PersonalInfo, ResumeData
+from src.llm.service import LLMExtractionResult
 from src.ocr.service import OCRResult
-from src.parsing.schemas import UsageEntry
 from src.pipeline.nodes import (
     check_ocr_quality_node,
     extract_node,
@@ -18,7 +17,6 @@ from src.pipeline.nodes import (
     parse_node,
 )
 from src.providers.exceptions import ProviderError
-
 
 # -- extract_node --
 

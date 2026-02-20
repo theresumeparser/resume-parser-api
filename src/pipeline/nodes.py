@@ -1,5 +1,8 @@
 """Pipeline node functions — one per processing step."""
 
+from typing import Any
+
+from src.config import ModelRef
 from src.extraction.base import ExtractionError
 from src.extraction.factory import extract_text
 from src.extraction.quality import score_text_quality
@@ -13,16 +16,14 @@ from src.providers.exceptions import ProviderError
 logger = get_logger("pipeline")
 
 
-def extract_node(state: PipelineState) -> dict:
+def extract_node(state: PipelineState) -> dict[str, Any]:
     """Algorithmic text extraction from the uploaded file."""
     try:
         result = extract_text(
             state["content"], state["content_type"], state["filename"]
         )
     except ExtractionError as exc:
-        logger.error(
-            "node_extract_error", error=str(exc), filename=state["filename"]
-        )
+        logger.error("node_extract_error", error=str(exc), filename=state["filename"])
         return {"error": str(exc), "text": ""}
 
     quality = score_text_quality(result)
@@ -41,14 +42,14 @@ def extract_node(state: PipelineState) -> dict:
     }
 
 
-def check_ocr_node(state: PipelineState) -> dict:
+def check_ocr_node(state: PipelineState) -> dict[str, Any]:
     """Routing node — the conditional edge decides the next step."""
     return {}
 
 
-async def ocr_node(state: PipelineState) -> dict:
+async def ocr_node(state: PipelineState) -> dict[str, Any]:
     """Run OCR via vision model, retrying through the OCR chain on failure."""
-    ocr_chain: list = state["ocr_chain"]
+    ocr_chain: list[ModelRef] = state["ocr_chain"]
     current_index: int = state.get("current_ocr_index", 0)
     usage_entries: list[UsageEntry] = []
 
@@ -102,7 +103,7 @@ async def ocr_node(state: PipelineState) -> dict:
     }
 
 
-def check_ocr_quality_node(state: PipelineState) -> dict:
+def check_ocr_quality_node(state: PipelineState) -> dict[str, Any]:
     """Use OCR text if it is longer than the algorithmic extraction."""
     ocr_text = state.get("ocr_text")
     current_text = state.get("text", "")
@@ -125,12 +126,12 @@ def check_ocr_quality_node(state: PipelineState) -> dict:
     return {}
 
 
-async def parse_node(state: PipelineState) -> dict:
+async def parse_node(state: PipelineState) -> dict[str, Any]:
     """LLM structured extraction using the current model in the parse chain."""
     if state.get("error"):
         return {}
 
-    parse_chain: list = state["parse_chain"]
+    parse_chain: list[ModelRef] = state["parse_chain"]
     current_index: int = state.get("current_parse_index", 0)
     model_ref = parse_chain[current_index]
     model_str = f"{model_ref.provider}/{model_ref.model}"
@@ -179,7 +180,7 @@ async def parse_node(state: PipelineState) -> dict:
         }
 
 
-def check_parse_node(state: PipelineState) -> dict:
+def check_parse_node(state: PipelineState) -> dict[str, Any]:
     """Routing node — evaluate parse result and decide next step."""
     if state.get("error"):
         return {}
@@ -191,7 +192,7 @@ def check_parse_node(state: PipelineState) -> dict:
     if parse_result.success and parse_result.data is not None:
         return {"resume_data": parse_result.data}
 
-    parse_chain: list = state["parse_chain"]
+    parse_chain: list[ModelRef] = state["parse_chain"]
     current_index: int = state.get("current_parse_index", 0)
 
     if current_index + 1 < len(parse_chain):

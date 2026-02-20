@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
 from src.logging import get_logger
 from src.providers.base import BaseProvider
 from src.providers.exceptions import ProviderError
-
 
 logger = get_logger("providers.openrouter")
 
@@ -77,7 +76,10 @@ class OpenRouterProvider(BaseProvider):
                 error=text,
             )
             raise ProviderError(
-                message=f"OpenRouter request failed with status {response.status_code}: {text}",
+                message=(
+                    f"OpenRouter request failed with status {response.status_code}: "
+                    f"{text}"
+                ),
                 provider="openrouter",
                 model=model,
                 status_code=response.status_code,
@@ -136,7 +138,7 @@ class OpenRouterProvider(BaseProvider):
             latency_ms=latency_ms,
         )
 
-        return payload
+        return cast(dict[str, Any], payload)
 
     def extract_usage(self, response: dict[str, Any]) -> dict[str, int]:
         """Extract token usage from an OpenRouter response.
@@ -167,8 +169,9 @@ class OpenRouterProvider(BaseProvider):
             return content
         except KeyError as exc:
             raise ProviderError(
-                message="Unexpected OpenRouter response structure while extracting content",
+                message=(
+                    "Unexpected OpenRouter response structure while extracting content"
+                ),
                 provider="openrouter",
                 model=str(response.get("model", "")),
             ) from exc
-

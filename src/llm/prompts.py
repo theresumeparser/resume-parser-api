@@ -30,6 +30,8 @@ def build_parse_messages(text: str) -> list[dict[str, Any]]:
         {"role": "system", "content": system_content},
         {
             "role": "user",
-            "content": f"Parse the following resume and return structured JSON:\n\n{text}",
+            "content": (
+                f"Parse the following resume and return structured JSON:\n\n{text}"
+            ),
         },
     ]

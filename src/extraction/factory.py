@@ -30,9 +30,7 @@ def _read_text(content: bytes, filename: str) -> ExtractionResult:
     )
 
 
-def extract_text(
-    content: bytes, content_type: str, filename: str
-) -> ExtractionResult:
+def extract_text(content: bytes, content_type: str, filename: str) -> ExtractionResult:
     ext = ""
     if "." in filename:
         ext = "." + filename.rsplit(".", 1)[-1].lower()

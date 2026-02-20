@@ -5,7 +5,9 @@ from src.providers.exceptions import ProviderError
 from src.providers.openrouter import OpenRouterProvider
 
 
-async def _make_provider(monkeypatch: pytest.MonkeyPatch, response: httpx.Response) -> tuple[OpenRouterProvider, dict]:
+async def _make_provider(
+    monkeypatch: pytest.MonkeyPatch, response: httpx.Response
+) -> tuple[OpenRouterProvider, dict]:
     calls: dict = {}
 
     async def fake_post(self: httpx.AsyncClient, url: str, json: dict, **kwargs):
@@ -14,7 +16,9 @@ async def _make_provider(monkeypatch: pytest.MonkeyPatch, response: httpx.Respon
         return response
 
     monkeypatch.setattr(httpx.AsyncClient, "post", fake_post)
-    provider = OpenRouterProvider(api_key="sk-test", base_url="https://openrouter.ai/api/v1")
+    provider = OpenRouterProvider(
+        api_key="sk-test", base_url="https://openrouter.ai/api/v1"
+    )
     return provider, calls
 
 
@@ -108,7 +112,9 @@ async def test_chat_raises_on_invalid_response_structure(
 
 
 def test_extract_usage_normal() -> None:
-    provider = OpenRouterProvider(api_key="sk-test", base_url="https://openrouter.ai/api/v1")
+    provider = OpenRouterProvider(
+        api_key="sk-test", base_url="https://openrouter.ai/api/v1"
+    )
     response = {
         "usage": {
             "prompt_tokens": 1820,
@@ -122,14 +128,18 @@ def test_extract_usage_normal() -> None:
 
 
 def test_extract_usage_missing() -> None:
-    provider = OpenRouterProvider(api_key="sk-test", base_url="https://openrouter.ai/api/v1")
+    provider = OpenRouterProvider(
+        api_key="sk-test", base_url="https://openrouter.ai/api/v1"
+    )
     usage = provider.extract_usage({})
     assert usage["input_tokens"] == 0
     assert usage["output_tokens"] == 0
 
 
 def test_extract_content_normal() -> None:
-    provider = OpenRouterProvider(api_key="sk-test", base_url="https://openrouter.ai/api/v1")
+    provider = OpenRouterProvider(
+        api_key="sk-test", base_url="https://openrouter.ai/api/v1"
+    )
     response = {
         "model": "google/gemini-flash-1.5",
         "choices": [
@@ -147,7 +157,9 @@ def test_extract_content_normal() -> None:
 
 
 def test_extract_content_missing_raises() -> None:
-    provider = OpenRouterProvider(api_key="sk-test", base_url="https://openrouter.ai/api/v1")
+    provider = OpenRouterProvider(
+        api_key="sk-test", base_url="https://openrouter.ai/api/v1"
+    )
     response = {"model": "google/gemini-flash-1.5", "choices": []}
     with pytest.raises(ProviderError):
         provider.extract_content(response)
@@ -191,4 +203,3 @@ async def test_kwargs_override_defaults(monkeypatch: pytest.MonkeyPatch) -> None
     body = calls["json"]
     assert body["temperature"] == 0.5
     assert body["max_tokens"] == 123
-

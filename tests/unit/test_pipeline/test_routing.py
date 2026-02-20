@@ -6,7 +6,6 @@ from src.llm.schemas import PersonalInfo, ResumeData
 from src.llm.service import LLMExtractionResult
 from src.pipeline.graph import route_ocr, route_parse_result
 
-
 # -- route_ocr --
 
 

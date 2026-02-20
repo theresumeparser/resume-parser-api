@@ -6,7 +6,7 @@ import pytest
 
 from src.config import ModelRef
 from src.llm.schemas import ResumeData
-from src.llm.service import LLMExtractionResult, extract_resume_data
+from src.llm.service import extract_resume_data
 from src.providers.exceptions import ProviderError
 from src.providers.factory import reset_providers
 
@@ -45,7 +45,7 @@ def _reset_providers_after_test() -> None:
 
 @pytest.mark.asyncio
 async def test_extract_success(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Mock provider returns valid JSON; assert success=True, data is ResumeData, token counts set."""
+    """Mock provider returns valid JSON; success=True, data is ResumeData."""
     content = _valid_json_response()
     provider = _make_mock_provider(content, input_tokens=1820, output_tokens=940)
 
@@ -68,8 +68,11 @@ async def test_extract_success(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.asyncio
 async def test_extract_validation_failure(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Mock provider returns JSON with schema violations; success=False, validation_errors non-empty."""
-    content = '{"personal_info": {"name": "Jane"}, "experience": [{"company": "Acme", "title": "Dev"}]}'
+    """Mock provider returns JSON with schema violations; success=False, errors set."""
+    content = (
+        '{"personal_info": {"name": "Jane"}, "experience": '
+        '[{"company": "Acme", "title": "Dev"}]}'
+    )
     provider = _make_mock_provider(content)
 
     def fake_get_provider(ref: ModelRef):
@@ -82,7 +85,9 @@ async def test_extract_validation_failure(monkeypatch: pytest.MonkeyPatch) -> No
     assert result.success is False
     assert result.data is None
     assert len(result.validation_errors) >= 1
-    assert any("experience" in e and "start_date" in e for e in result.validation_errors)
+    assert any(
+        "experience" in e and "start_date" in e for e in result.validation_errors
+    )
 
 
 @pytest.mark.asyncio
@@ -100,7 +105,9 @@ async def test_extract_invalid_json(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert result.success is False
     assert result.data is None
-    assert any("json" in e.lower() or "parse" in e.lower() for e in result.validation_errors)
+    assert any(
+        "json" in e.lower() or "parse" in e.lower() for e in result.validation_errors
+    )
 
 
 @pytest.mark.asyncio
@@ -125,7 +132,10 @@ async def test_extract_strips_markdown_fences(monkeypatch: pytest.MonkeyPatch) -
 async def test_provider_error_propagates(monkeypatch: pytest.MonkeyPatch) -> None:
     """Mock provider raises ProviderError; assert it is not caught."""
     provider = MagicMock()
-    provider.chat = AsyncMock(side_effect=ProviderError("Network error", provider="openrouter", model="google/gemini-flash-1.5"))
+    err = ProviderError(
+        "Network error", provider="openrouter", model="google/gemini-flash-1.5"
+    )
+    provider.chat = AsyncMock(side_effect=err)
 
     def fake_get_provider(ref: ModelRef):
         return provider
@@ -138,7 +148,7 @@ async def test_provider_error_propagates(monkeypatch: pytest.MonkeyPatch) -> Non
 
 @pytest.mark.asyncio
 async def test_token_counts_extracted(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Mock provider returns response with usage; input_tokens and output_tokens match."""
+    """Mock provider returns usage; input_tokens and output_tokens match."""
     content = _valid_json_response()
     provider = _make_mock_provider(content, input_tokens=2000, output_tokens=300)
 

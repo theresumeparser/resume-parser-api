@@ -15,7 +15,7 @@ def test_build_parse_messages_structure() -> None:
 
 
 def test_system_message_contains_schema() -> None:
-    """System message content includes personal_info, experience, and other schema field names."""
+    """System message includes personal_info, experience, and other schema fields."""
     result = build_parse_messages("Resume content")
     system_msg = next(m for m in result if m["role"] == "system")
     content = system_msg["content"]

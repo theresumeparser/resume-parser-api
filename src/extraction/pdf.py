@@ -16,9 +16,7 @@ def extract_pdf(content: bytes, filename: str) -> ExtractionResult:
             error=str(exc),
             filename=filename,
         )
-        raise ExtractionError(
-            f"Failed to open PDF: {exc}", filename=filename
-        ) from exc
+        raise ExtractionError(f"Failed to open PDF: {exc}", filename=filename) from exc
 
     try:
         pages = len(doc)
