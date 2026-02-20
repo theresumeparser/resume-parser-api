@@ -321,10 +321,36 @@ Pytest, Ruff, and mypy are configured in `pyproject.toml`; run commands from the
 
 **Docker**
 
+Pre-built images are published to GitHub Container Registry (GHCR). Replace `yourorg` with your GitHub org or username.
+
+```bash
+# Latest stable release
+docker pull ghcr.io/yourorg/resume-parser-api:latest
+docker run --rm -p 8000:8000 --env-file .env ghcr.io/yourorg/resume-parser-api:latest
+
+# Specific version
+docker pull ghcr.io/yourorg/resume-parser-api:0.2.0
+
+# Bleeding edge (latest main branch build)
+docker pull ghcr.io/yourorg/resume-parser-api:main
+```
+
+Build locally (use `--pull` for latest base image; pass `--build-arg VERSION=x.y.z` to set image metadata):
+
 ```bash
 docker build -t resume-parser-api .
-docker run -p 8000:8000 --env-file .env resume-parser-api
+# Optional: reproducible builds with a fresh base
+# docker build --pull -t resume-parser-api .
+docker run --rm -p 8000:8000 --env-file .env resume-parser-api
 ```
+
+Local development with live reload (mounts `./src`, uses `.env`):
+
+```bash
+docker compose up
+```
+
+Verify: `curl http://localhost:8000/api/v1/health` should return `{"status":"ok"}`. The image includes a `HEALTHCHECK` and OCI labels (title, description, version, license) for orchestration and registries.
 
 ## Design Decisions
 
@@ -355,8 +381,8 @@ docker run -p 8000:8000 --env-file .env resume-parser-api
 - [x] LangGraph pipeline wiring
 - [x] Fallback model escalation on validation failure
 - [x] Usage reporting (per-model token counts, page count)
-- [ ] Docker support
-- [ ] CI/CD pipeline
+- [x] Docker support
+- [x] CI/CD pipeline
 
 ## Contributing
 
